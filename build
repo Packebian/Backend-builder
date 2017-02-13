@@ -72,14 +72,18 @@ if [ -e "makefile" ]; then
 	for file in *; do
 		# Déplacement du(es) exécutable(s) dans /usr/local/bin
 		if [ -x "$file" ]; then
-			mv "$file" ../../../usr/local/bin
+			mv $file ../../../usr/local/bin
 		fi
 	done
 	cd ../../..
 elif [ -e "pom.xml" ]; then
 	echo "[INFO] Maven project"
 	mvn install
-	mv main/ target/ opt/packebian/$2
+	for $file in *; do
+                if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
+                        mv $file opt/packebian/$2
+                fi
+        done
 	touch $2
 	chmod u+x $2
 	echo '#!/bin/bash' > $2
@@ -90,12 +94,24 @@ elif [ -e "build.xml" ]; then
 	echo "[INFO] Ant project"
 elif [ -e "build.gradle" ]; then
 	echo "[INFO] Gradle project"
+	gradle build
+	for $file in *; do
+		if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
+			mv $file opt/packebian/$2
+		fi
+	done
+	touch $2
+	chmod u+x $2
+        echo '#!/bin/bash' > $2
+        echo "" >> $2
+        echo "java -jar ../../../opt/packebian/$2/build/libs/*.jar" >> $2
+        mv $2 usr/local/bin
 elif [ `ls | wc -l` -gt 0 ]; then
 	for file in *; do
 		if [ -x "$file" ]; then
-			mv "$file" usr/local/bin
+			mv $file usr/local/bin
 		else
-			mv "$file" opt/packedian/$2
+			mv $file opt/packedian/$2
 		fi
 	done
 	if [ `ls opt/packebian/$2 | wc -l` = 0 ]; then
@@ -108,7 +124,7 @@ elif [ `ls | wc -l` -gt 0 ]; then
 		exit 500
 	fi
 else
-	echo -e "$red[ERR-400] Le dépot git pue et/ou le builder est à chier $white"
+	echo -e "$red[ERR-400] Le dépot git est mal conçu et/ou le builder est mal configuré $white"
 	cd ..
 	rm -rf $2
 	exit 400
