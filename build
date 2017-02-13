@@ -52,20 +52,20 @@ else
 fi
 # *****************************************************************************
 
+# Opérations réccurentes
+mkdir -p usr/local/bin
+mkdir -p opt/packebian/$2
+
 # Un makefile est dans le dossier on va donc créer le(s) exécutable(s) et créer
 # l'arborescence de dossier
 echo "[INFO] Vérification de la présence d'un makefile à la racine du dépot"
 if [ -e "makefile" ]; then
 	echo "[INFO] Création de opt/$2 pour les sources et usr/bin pour le(s) exécutable(s)"
-	mkdir -p opt/packedian/$2
-	mv makefile opt/packedian/$2
 	for file in *; do
-		if [ "$file" != "DEBIAN" -a "$file" != "opt" ]; then
+		if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
 			mv $file opt/packedian/$2
 		fi
 	done
-
-	mkdir -p usr/local/bin
 	cd opt/packedian/$2
 	echo "[INFO] Compilation des sources et déplacement du(es) exécutable(s)"
 	make
@@ -78,8 +78,6 @@ if [ -e "makefile" ]; then
 	cd ../../..
 elif [ -e "pom.xml" ]; then
 	echo "[INFO] Maven project"
-	mkdir -p usr/local/bin
-	mkdir -p opt/packebian/$2
 	mvn install
 	mv main/ target/ opt/packebian/$2
 	touch $2
@@ -91,10 +89,8 @@ elif [ -e "pom.xml" ]; then
 elif [ -e "build.xml" ]; then
 	echo "[INFO] Ant project"
 elif [ -e "build.gradle" ]; then
-	echo "[INFO] Graddle project"
-elif [ `ls | wc -l` -gt 1 ]; then
-	mkdir -p usr/local/bin
-	mkdir -p opt/packebian/$2
+	echo "[INFO] Gradle project"
+elif [ `ls | wc -l` -gt 0 ]; then
 	for file in *; do
 		if [ -x "$file" ]; then
 			mv "$file" usr/local/bin
