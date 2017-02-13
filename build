@@ -1,0 +1,132 @@
+#!/bin/bash
+
+# $1 : l'adresse du git à cloner
+# $2 : le nom du package
+# $3 : le type des sources : code / binaire / script
+# (par défaut on cherchera un makefile)
+
+red="\033[1;31m"
+white="\033[1;37m"
+
+if [ $# != 2 ]; then
+	echo "Le builder requiert 3 arguments :"
+	echo " - (1) l'adresse du git à cloner"
+	echo " - (2) le nom du package"
+	#echo " - (3) le nom de la branche du git à copier"
+	exit 100
+fi
+
+echo "**************************************************"
+echo "              Début de la création               *"
+echo "**************************************************"
+echo ""
+
+# Clonage du projet contenant les sources du package
+echo "[INFO] Clonage du git : $1"
+git clone $1
+# On rentre dans le dossier dans le but de supprimer le .git
+cd $2
+# git checkout $3
+rm -rf .git
+
+# *****************************************************************************
+# On regarde que le dossier DEBIAN existe bien sinon la création du package
+# sera impossible
+echo "[INFO] Vérification de la présence du répertoire DEBIAN/ et du fichier DEBIAN/control"
+if [ -d "DEBIAN" ]; then
+	cd DEBIAN
+	# On vérifie que le fichier control est présent
+	if [ -e "control" ]; then
+		cd ..
+	else
+		echo -e "$red[ERR-200] Le fichier control n'est pas dans le dossier DEBIAN$white"
+		cd ../..
+		rm -rf $2
+		exit 200
+	fi
+else
+	echo -e "$red[ERR-300] Le dossier DEBIAN n'existe pas$white"
+	cd ..
+	rm -rf $2
+	exit 300
+fi
+# *****************************************************************************
+
+# Un makefile est dans le dossier on va donc créer le(s) exécutable(s) et créer
+# l'arborescence de dossier
+echo "[INFO] Vérification de la présence d'un makefile à la racine du dépot"
+if [ -e "makefile" ]; then
+	echo "[INFO] Création de opt/$2 pour les sources et usr/bin pour le(s) exécutable(s)"
+	mkdir -p opt/packedian/$2
+	mv makefile opt/packedian/$2
+	for file in *; do
+		if [ "$file" != "DEBIAN" -a "$file" != "opt" ]; then
+			mv $file opt/packedian/$2
+		fi
+	done
+
+	mkdir -p usr/local/bin
+	cd opt/packedian/$2
+	echo "[INFO] Compilation des sources et déplacement du(es) exécutable(s)"
+	make
+	for file in *; do
+		# Déplacement du(es) exécutable(s) dans /usr/local/bin
+		if [ -x "$file" ]; then
+			mv "$file" ../../../usr/local/bin
+		fi
+	done
+	cd ../../..
+elif [ -e "pom.xml" ]; then
+	echo "[INFO] Maven project"
+	mkdir -p usr/local/bin
+	mkdir -p opt/packebian/$2
+	mvn install
+	mv main/ target/ opt/packebian/$2
+	touch $2
+	chmod u+x $2
+	echo '#!/bin/bash' > $2
+	echo "" >> $2
+	echo "java -jar ../../../opt/packebian/$2/target/*.jar" >> $2
+	mv $2 usr/local/bin
+elif [ -e "build.xml" ]; then
+	echo "[INFO] Ant project"
+elif [ -e "build.gradle" ]; then
+	echo "[INFO] Graddle project"
+elif [ `ls | wc -l` -gt 1 ]; then
+	mkdir -p usr/local/bin
+	mkdir -p opt/packebian/$2
+	for file in *; do
+		if [ -x "$file" ]; then
+			mv "$file" usr/local/bin
+		else
+			mv "$file" opt/packedian/$2
+		fi
+	done
+	if [ `ls opt/packebian/$2 | wc -l` = 0 ]; then
+		rm -rf opt
+	fi
+	if [ `ls usr/local/bin | wc -l` = 0]; then
+		cd ..
+		rm -rf $2
+		echo -e "$red[ERR-500] Aucun exécutable n'a été détecté$white"
+		exit 500
+	fi
+else
+	echo -e "$red[ERR-400] Le dépot git pue et/ou le builder est à chier $white"
+	cd ..
+	rm -rf $2
+	exit 400
+fi
+
+# On revient à la racine et on créé le package
+cd ..
+echo "[INFO] Création du package"
+dpkg-deb --build $2
+
+# On supprime le dossier contenant les sources du package
+rm -rf $2
+
+echo ""
+echo "**************************************************"
+echo "               Fin de la création                *"
+echo "**************************************************"
