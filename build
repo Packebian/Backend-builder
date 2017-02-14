@@ -1,10 +1,5 @@
 #!/bin/bash
 
-# $1 : l'adresse du git à cloner
-# $2 : le nom du package
-# $3 : le type des sources : code / binaire / script
-# (par défaut on cherchera un makefile)
-
 red="\033[1;31m"
 white="\033[1;37m"
 
@@ -12,7 +7,7 @@ if [ $# != 2 ]; then
 	echo "Le builder requiert 3 arguments :"
 	echo " - (1) l'adresse du git à cloner"
 	echo " - (2) le nom du package"
-	#echo " - (3) le nom de la branche du git à copier"
+	#echo " - (3) le tag pour la copie du git"
 	exit 100
 fi
 
@@ -79,6 +74,10 @@ if [ -e "makefile" ]; then
 elif [ -e "pom.xml" ]; then
 	echo "[INFO] Maven project"
 	mvn install
+	if [ ! -e "target/$2.jar" ]; then
+		echo -e "$red[ERR-600] $2.jar ne se trouve pas dans target/$white"
+		exit 600
+	fi
 	for $file in *; do
                 if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
                         mv $file opt/packebian/$2
@@ -88,13 +87,33 @@ elif [ -e "pom.xml" ]; then
 	chmod u+x $2
 	echo '#!/bin/bash' > $2
 	echo "" >> $2
-	echo "java -jar ../../../opt/packebian/$2/target/*.jar" >> $2
+	echo "java -jar ../../../opt/packebian/$2/target/$2.jar" >> $2
 	mv $2 usr/local/bin
 elif [ -e "build.xml" ]; then
 	echo "[INFO] Ant project"
+	ant run
+	if [ ! -e "build/jar/$2.jar" ]; then
+		echo -e "$red[ERR-700] $2.jar ne se trouve pas dans build/jar/$white"
+		exit 700
+	fi
+	for $file in *; do
+		if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
+			mv $file opt/packebian/$2
+		fi
+	done
+	touch $2
+	chmod u+x $2
+	echo '#!/bin/bash' > $2
+	echo "" >> $2
+	echo "java -jar ../../../opt/packebian/$2/build/jar/$2.jar" >> $2
+	mv $2 usr/local/bin
 elif [ -e "build.gradle" ]; then
 	echo "[INFO] Gradle project"
 	gradle build
+	if [ ! -e "build/libs/$2.jar" ];  then
+		echo -e "$red[ERR-800] $2.jar ne se trouve pas dans build/libs/$white"
+		exit 800
+	fi
 	for $file in *; do
 		if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
 			mv $file opt/packebian/$2
@@ -104,7 +123,7 @@ elif [ -e "build.gradle" ]; then
 	chmod u+x $2
         echo '#!/bin/bash' > $2
         echo "" >> $2
-        echo "java -jar ../../../opt/packebian/$2/build/libs/*.jar" >> $2
+        echo "java -jar ../../../opt/packebian/$2/build/libs/$2.jar" >> $2
         mv $2 usr/local/bin
 elif [ `ls | wc -l` -gt 0 ]; then
 	for file in *; do
