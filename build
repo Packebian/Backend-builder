@@ -46,93 +46,63 @@ fi
 mkdir -p usr/local/bin
 mkdir -p opt/packebian/$2
 
-echo "[INFO] Check if there is a 'makefile'"
 if [ -e "makefile" ]; then
-	for file in *; do
-		if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
-			mv $file opt/packedian/$2
-		fi
-	done
-	cd opt/packedian/$2
-	echo "[INFO] Compilation of sources"
-	make
-	for file in *; do
-		if [ -x "$file" ]; then
-			mv $file ../../../usr/local/bin
-		fi
-	done
-	cd ../../..
+	echo "[INFO] There is a makefile"
+	./build_makefile $2
+
+	# Wrong parameter : need the name of the package
+	if [ $? = 101 ]; then
+		exit 101
+	fi
+
 elif [ -e "pom.xml" ]; then
 	echo "[INFO] Maven project"
-	mvn install
-	if [ ! -e "target/$2.jar" ]; then
-		echo -e "$red[ERR-600] There is not $2.jar in target/$white"
+	./build_maven $2
+
+	# Wrong parameter : need the name of the package
+	if [ $? = 102 ]; then
+		exit 102
+	# There is not a jar in target/
+	elif [ $? = 600 ]; then
 		exit 600
 	fi
-	for $file in *; do
-                if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
-                        mv $file opt/packebian/$2
-                fi
-        done
-	touch $2
-	chmod u+x $2
-	echo '#!/bin/bash' > $2
-	echo "" >> $2
-	echo "java -jar ../../../opt/packebian/$2/target/$2.jar" >> $2
-	mv $2 usr/local/bin
+
 elif [ -e "build.xml" ]; then
 	echo "[INFO] Ant project"
-	ant run
-	if [ ! -e "build/jar/$2.jar" ]; then
-		echo -e "$red[ERR-700] There is not $2.jar in build/jar/$white"
+	./build_ant $2
+
+	# Wrong parameter : need the name of the package
+	if [ $? = 103 ]; then
+		exit 103
+	# There is not a jar in build/jar/
+	elif [ $? = 700 ]; then
 		exit 700
 	fi
-	for $file in *; do
-		if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
-			mv $file opt/packebian/$2
-		fi
-	done
-	touch $2
-	chmod u+x $2
-	echo '#!/bin/bash' > $2
-	echo "" >> $2
-	echo "java -jar ../../../opt/packebian/$2/build/jar/$2.jar" >> $2
-	mv $2 usr/local/bin
+
 elif [ -e "build.gradle" ]; then
 	echo "[INFO] Gradle project"
-	gradle build
-	if [ ! -e "build/libs/$2.jar" ];  then
-		echo -e "$red[ERR-800] There is not $2.jar in build/libs/$white"
+	./build_gradle $2
+
+	# Wrong parameter : need the name of the package
+	if [ $? = 104 ]; then
+		exit 104
+	# There is not a jar in build/libs/
+	elif [ $? = 800 ]; then
 		exit 800
 	fi
-	for $file in *; do
-		if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
-			mv $file opt/packebian/$2
-		fi
-	done
-	touch $2
-	chmod u+x $2
-        echo '#!/bin/bash' > $2
-        echo "" >> $2
-        echo "java -jar ../../../opt/packebian/$2/build/libs/$2.jar" >> $2
-        mv $2 usr/local/bin
+
 elif [ `ls | wc -l` -gt 0 ]; then
-	for file in *; do
-		if [ -x "$file" ]; then
-			mv $file usr/local/bin
-		else
-			mv $file opt/packedian/$2
-		fi
-	done
-	if [ `ls opt/packebian/$2 | wc -l` = 0 ]; then
-		rm -rf opt
-	fi
-	if [ `ls usr/local/bin | wc -l` = 0]; then
-		cd ..
-		rm -rf $2
-		echo -e "$red[ERR-500] No executable were found$white"
+	echo "[INFO] There are some files, it will check if there are some executables"
+	./build_bin $2
+
+	# Wrong parameter : need the name of the package
+	if [ $? = 105 ]; then
+		exit 105
+	# No executable was found
+	elif [ $? = 500 ]; then
 		exit 500
 	fi
+
 else
 	echo -e "$red[ERR-400] Git repository was not build as recommended or the builder is not configured$white"
 	cd ..

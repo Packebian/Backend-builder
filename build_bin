@@ -1,0 +1,26 @@
+#!/bin/bash
+
+red="\033[1;31m"
+white="\033[1;37m"
+
+if [ $# != 1 ]; then
+	echo -e "$red[ERR-105] builder_bin needs only 1 parameter : the name of the package$white"
+	exit 105
+fi
+
+for file in *; do
+	if [ -x "$file" ]; then
+		mv $file usr/local/bin
+	else
+		mv $file opt/packedian/$1
+	fi
+done
+if [ `ls opt/packebian/$1 | wc -l` = 0 ]; then
+	rm -rf opt
+fi
+if [ `ls usr/local/bin | wc -l` = 0]; then
+	cd ..
+	rm -rf $1
+	echo -e "$red[ERR-500] No executable was found$white"
+	exit 500
+fi
