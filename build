@@ -4,68 +4,59 @@ red="\033[1;31m"
 white="\033[1;37m"
 
 if [ $# != 2 ]; then
-	echo "Le builder requiert 3 arguments :"
-	echo " - (1) l'adresse du git à cloner"
-	echo " - (2) le nom du package"
-	#echo " - (3) le tag pour la copie du git"
+	echo "Builder needs 3 parameters :"
+	echo " - (1) adress of the git"
+	echo " - (2) name of the package"
+	#echo " - (3) tag to know where the builder has to copy"
 	exit 100
 fi
 
 echo "**************************************************"
-echo "              Début de la création               *"
+echo "           Starting package creation             *"
 echo "**************************************************"
 echo ""
 
-# Clonage du projet contenant les sources du package
-echo "[INFO] Clonage du git : $1"
+echo "[INFO] Cloning git : $1"
 git clone $1
-# On rentre dans le dossier dans le but de supprimer le .git
 cd $2
-# git checkout $3
 rm -rf .git
 
 # *****************************************************************************
-# On regarde que le dossier DEBIAN existe bien sinon la création du package
-# sera impossible
-echo "[INFO] Vérification de la présence du répertoire DEBIAN/ et du fichier DEBIAN/control"
+echo "[INFO] Check if DEBIAN/ and DEBIAN/control exist"
 if [ -d "DEBIAN" ]; then
 	cd DEBIAN
-	# On vérifie que le fichier control est présent
 	if [ -e "control" ]; then
 		cd ..
 	else
-		echo -e "$red[ERR-200] Le fichier control n'est pas dans le dossier DEBIAN$white"
+		echo -e "$red[ERR-200] There is not a file 'control' in DEBIAN/$white"
 		cd ../..
 		rm -rf $2
 		exit 200
 	fi
 else
-	echo -e "$red[ERR-300] Le dossier DEBIAN n'existe pas$white"
+	echo -e "$red[ERR-300] There is not a directory 'DEBIAN/'$white"
 	cd ..
 	rm -rf $2
 	exit 300
 fi
 # *****************************************************************************
 
-# Opérations réccurentes
+
+# Creating our directories for sources and executables
 mkdir -p usr/local/bin
 mkdir -p opt/packebian/$2
 
-# Un makefile est dans le dossier on va donc créer le(s) exécutable(s) et créer
-# l'arborescence de dossier
-echo "[INFO] Vérification de la présence d'un makefile à la racine du dépot"
+echo "[INFO] Check if there is a 'makefile'"
 if [ -e "makefile" ]; then
-	echo "[INFO] Création de opt/$2 pour les sources et usr/bin pour le(s) exécutable(s)"
 	for file in *; do
 		if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
 			mv $file opt/packedian/$2
 		fi
 	done
 	cd opt/packedian/$2
-	echo "[INFO] Compilation des sources et déplacement du(es) exécutable(s)"
+	echo "[INFO] Compilation of sources"
 	make
 	for file in *; do
-		# Déplacement du(es) exécutable(s) dans /usr/local/bin
 		if [ -x "$file" ]; then
 			mv $file ../../../usr/local/bin
 		fi
@@ -75,7 +66,7 @@ elif [ -e "pom.xml" ]; then
 	echo "[INFO] Maven project"
 	mvn install
 	if [ ! -e "target/$2.jar" ]; then
-		echo -e "$red[ERR-600] $2.jar ne se trouve pas dans target/$white"
+		echo -e "$red[ERR-600] There is not $2.jar in target/$white"
 		exit 600
 	fi
 	for $file in *; do
@@ -93,7 +84,7 @@ elif [ -e "build.xml" ]; then
 	echo "[INFO] Ant project"
 	ant run
 	if [ ! -e "build/jar/$2.jar" ]; then
-		echo -e "$red[ERR-700] $2.jar ne se trouve pas dans build/jar/$white"
+		echo -e "$red[ERR-700] There is not $2.jar in build/jar/$white"
 		exit 700
 	fi
 	for $file in *; do
@@ -111,7 +102,7 @@ elif [ -e "build.gradle" ]; then
 	echo "[INFO] Gradle project"
 	gradle build
 	if [ ! -e "build/libs/$2.jar" ];  then
-		echo -e "$red[ERR-800] $2.jar ne se trouve pas dans build/libs/$white"
+		echo -e "$red[ERR-800] There is not $2.jar in build/libs/$white"
 		exit 800
 	fi
 	for $file in *; do
@@ -139,25 +130,23 @@ elif [ `ls | wc -l` -gt 0 ]; then
 	if [ `ls usr/local/bin | wc -l` = 0]; then
 		cd ..
 		rm -rf $2
-		echo -e "$red[ERR-500] Aucun exécutable n'a été détecté$white"
+		echo -e "$red[ERR-500] No executable were found$white"
 		exit 500
 	fi
 else
-	echo -e "$red[ERR-400] Le dépot git est mal conçu et/ou le builder est mal configuré $white"
+	echo -e "$red[ERR-400] Git repository was not build as recommended or the builder is not configured$white"
 	cd ..
 	rm -rf $2
 	exit 400
 fi
 
-# On revient à la racine et on créé le package
 cd ..
-echo "[INFO] Création du package"
+echo "[INFO] Creation of the package"
 dpkg-deb --build $2
 
-# On supprime le dossier contenant les sources du package
 rm -rf $2
 
 echo ""
 echo "**************************************************"
-echo "               Fin de la création                *"
+echo "             Ending package creation              *"
 echo "**************************************************"
