@@ -23,9 +23,9 @@ rm -rf .git
 
 # *****************************************************************************
 echo "[INFO] Check if DEBIAN/ and DEBIAN/control exist"
-if [ -d "DEBIAN" ]; then
+if [ -d DEBIAN ]; then
 	cd DEBIAN
-	if [ -e "control" ]; then
+	if [ -e control ]; then
 		cd ..
 	else
 		echo -e "$red[ERR-200] There is not a file 'control' in DEBIAN/$white"
@@ -46,61 +46,68 @@ fi
 mkdir -p usr/local/bin
 mkdir -p opt/packebian/$2
 
-if [ -e "makefile" ]; then
+if [ -e makefile ]; then
 	echo "[INFO] There is a makefile"
 	./build_makefile $2
 
-	# Wrong parameter : need the name of the package
+	# 101 -> Wrong parameter : need the name of the package
 	if [ $? = 101 ]; then
-		exit 101
+		err=$?
+		cd ..
+        	rm -rf $2
+		exit err
 	fi
 
-elif [ -e "pom.xml" ]; then
+elif [ -e pom.xml ]; then
 	echo "[INFO] Maven project"
 	./build_maven $2
 
-	# Wrong parameter : need the name of the package
-	if [ $? = 102 ]; then
-		exit 102
-	# There is not a jar in target/
-	elif [ $? = 600 ]; then
-		exit 600
+	# 102 -> Wrong parameter : need the name of the package
+	# 600 -> There is not a jar in target/
+	if [ $? = 102 -o $? = 600 ]; then
+		err=$?
+		cd ..
+        	rm -rf $2
+		exit err
 	fi
 
-elif [ -e "build.xml" ]; then
+elif [ -e build.xml ]; then
 	echo "[INFO] Ant project"
 	./build_ant $2
 
-	# Wrong parameter : need the name of the package
-	if [ $? = 103 ]; then
-		exit 103
-	# There is not a jar in build/jar/
-	elif [ $? = 700 ]; then
-		exit 700
+	# 103 -> Wrong parameter : need the name of the package
+	# 700 -> There is not a jar in build/jar/
+	if [ $? = 103 -o $? = 700 ]; then
+		err=$?
+		cd ..
+        	rm -rf $2
+		exit err
 	fi
 
-elif [ -e "build.gradle" ]; then
+elif [ -e build.gradle ]; then
 	echo "[INFO] Gradle project"
 	./build_gradle $2
 
-	# Wrong parameter : need the name of the package
-	if [ $? = 104 ]; then
-		exit 104
-	# There is not a jar in build/libs/
-	elif [ $? = 800 ]; then
-		exit 800
+	# 104 -> Wrong parameter : need the name of the package
+	# 800 -> There is not a jar in build/libs/
+	if [ $? = 104 -o $? = 800 ]; then
+		err=$?
+		cd ..
+        	rm -rf $2
+		exit err
 	fi
 
 elif [ `ls | wc -l` -gt 0 ]; then
 	echo "[INFO] There are some files, it will check if there are some executables"
 	./build_bin $2
 
-	# Wrong parameter : need the name of the package
-	if [ $? = 105 ]; then
-		exit 105
-	# No executable was found
-	elif [ $? = 500 ]; then
-		exit 500
+	# 105 -> Wrong parameter : need the name of the package
+	# 500 -> No executable was found
+	if [ $? = 105 -o $? = 500 ]; then
+		err=$?
+		cd ..
+        	rm -rf $2
+		exit err
 	fi
 
 else
