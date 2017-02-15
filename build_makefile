@@ -22,3 +22,5 @@ for file in *; do
 	fi
 done
 cd ../../..
+
+exit 0

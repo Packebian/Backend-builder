@@ -3,13 +3,32 @@
 red="\033[1;31m"
 white="\033[1;37m"
 
-if [ $# != 2 ]; then
+REPOSITORY=
+PACKAGE=
+TAG=
+
+# Remove the first dash of options
+while getopts ":-:" dash; do
+	# IPS : shell separator
+	# Split option and argument
+	while IFS="=" read option arg; do
+		case $option in
+			repository) REPOSITORY=$arg ;;
+			package) PACKAGE=$arg ;;
+			tag) TAG=$arg ;;
+		esac
+	# It has to take 'option=argument' as entry
+	done < <( echo "$OPTARG" )
+done
+
+if [ -z "$REPOSITORY" -o -z "$PACKAGE" -o -z "$TAG" ]; then
 	echo "Builder needs 3 parameters :"
-	echo " - (1) adress of the git"
-	echo " - (2) name of the package"
-	#echo " - (3) tag to know where the builder has to copy"
+	echo " --repository : adress of the git"
+	echo " --package : name of the package"
+	echo " --tag : tag to know where the builder has to copy"
 	exit 100
 fi
+
 
 echo "**************************************************"
 echo "           Starting package creation             *"
@@ -17,8 +36,8 @@ echo "**************************************************"
 echo ""
 
 echo "[INFO] Cloning git : $1"
-git clone $1
-cd $2
+git clone $REPOSITORY
+cd $PACKAGE
 rm -rf .git
 
 # *****************************************************************************
@@ -30,13 +49,13 @@ if [ -d DEBIAN ]; then
 	else
 		echo -e "$red[ERR-200] There is not a file 'control' in DEBIAN/$white"
 		cd ../..
-		rm -rf $2
+		rm -rf $PACKAGE
 		exit 200
 	fi
 else
 	echo -e "$red[ERR-300] There is not a directory 'DEBIAN/'$white"
 	cd ..
-	rm -rf $2
+	rm -rf $PACKAGE
 	exit 300
 fi
 # *****************************************************************************
@@ -44,86 +63,88 @@ fi
 
 # Creating our directories for sources and executables
 mkdir -p usr/local/bin
-mkdir -p opt/packebian/$2
+mkdir -p opt/packebian/$PACKAGE
 
 if [ -e makefile ]; then
 	echo "[INFO] There is a makefile"
-	./build_makefile $2
+	./build_makefile $PACKAGE
 
 	# 101 -> Wrong parameter : need the name of the package
 	if [ $? = 101 ]; then
 		err=$?
 		cd ..
-        	rm -rf $2
+        	rm -rf $PACKAGE
 		exit err
 	fi
 
 elif [ -e pom.xml ]; then
 	echo "[INFO] Maven project"
-	./build_maven $2
+	./build_maven $PACKAGE
 
 	# 102 -> Wrong parameter : need the name of the package
 	# 600 -> There is not a jar in target/
 	if [ $? = 102 -o $? = 600 ]; then
 		err=$?
 		cd ..
-        	rm -rf $2
+        	rm -rf $PACKAGE
 		exit err
 	fi
 
 elif [ -e build.xml ]; then
 	echo "[INFO] Ant project"
-	./build_ant $2
+	./build_ant $PACKAGE
 
 	# 103 -> Wrong parameter : need the name of the package
 	# 700 -> There is not a jar in build/jar/
 	if [ $? = 103 -o $? = 700 ]; then
 		err=$?
 		cd ..
-        	rm -rf $2
+        	rm -rf $PACKAGE
 		exit err
 	fi
 
 elif [ -e build.gradle ]; then
 	echo "[INFO] Gradle project"
-	./build_gradle $2
+	./build_gradle $PACKAGE
 
 	# 104 -> Wrong parameter : need the name of the package
 	# 800 -> There is not a jar in build/libs/
 	if [ $? = 104 -o $? = 800 ]; then
 		err=$?
 		cd ..
-        	rm -rf $2
+        	rm -rf $PACKAGE
 		exit err
 	fi
 
 elif [ `ls | wc -l` -gt 0 ]; then
 	echo "[INFO] There are some files, it will check if there are some executables"
-	./build_bin $2
+	./build_bin $PACKAGE
 
 	# 105 -> Wrong parameter : need the name of the package
 	# 500 -> No executable was found
 	if [ $? = 105 -o $? = 500 ]; then
 		err=$?
 		cd ..
-        	rm -rf $2
+        	rm -rf $PACKAGE
 		exit err
 	fi
 
 else
 	echo -e "$red[ERR-400] Git repository was not build as recommended or the builder is not configured$white"
 	cd ..
-	rm -rf $2
+	rm -rf $PACKAGE
 	exit 400
 fi
 
 cd ..
 echo "[INFO] Creation of the package"
-dpkg-deb --build $2
+dpkg-deb --build $PACKAGE
 
-rm -rf $2
+rm -rf $PACKAGE
 
 echo ""
 echo "**************************************************"
 echo "             Ending package creation              *"
 echo "**************************************************"
+
+exit 0

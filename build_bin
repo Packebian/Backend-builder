@@ -24,3 +24,5 @@ if [ `ls usr/local/bin | wc -l` = 0]; then
 	echo -e "$red[ERR-500] No executable was found$white"
 	exit 500
 fi
+
+exit 0
