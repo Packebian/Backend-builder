@@ -12,7 +12,7 @@ for file in *; do
 	if [ -x "$file" ]; then
 		mv $file usr/local/bin
 	else
-		mv $file opt/packedian/$1
+		mv $file opt/packebian/$1
 	fi
 done
 if [ `ls opt/packebian/$1 | wc -l` = 0 ]; then

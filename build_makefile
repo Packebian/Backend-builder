@@ -10,10 +10,11 @@ fi
 
 for file in *; do
 	if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
-		mv $file opt/packedian/$1
+		mv $file opt/packebian/$1
 	fi
 done
-cd opt/packedian/$1
+
+cd opt/packebian/$1
 echo "[INFO] Compilation of sources"
 make
 for file in *; do

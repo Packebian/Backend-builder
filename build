@@ -35,7 +35,7 @@ echo "           Starting package creation             *"
 echo "**************************************************"
 echo ""
 
-echo "[INFO] Cloning git : $1"
+echo "[INFO] Cloning git : $REPOSITORY"
 git clone $REPOSITORY
 cd $PACKAGE
 rm -rf .git
@@ -67,7 +67,7 @@ mkdir -p opt/packebian/$PACKAGE
 
 if [ -e makefile ]; then
 	echo "[INFO] There is a makefile"
-	./build_makefile $PACKAGE
+	../build_makefile $PACKAGE
 
 	# 101 -> Wrong parameter : need the name of the package
 	if [ $? = 101 ]; then
@@ -79,7 +79,7 @@ if [ -e makefile ]; then
 
 elif [ -e pom.xml ]; then
 	echo "[INFO] Maven project"
-	./build_maven $PACKAGE
+	../build_maven $PACKAGE
 
 	# 102 -> Wrong parameter : need the name of the package
 	# 600 -> There is not a jar in target/
@@ -92,7 +92,7 @@ elif [ -e pom.xml ]; then
 
 elif [ -e build.xml ]; then
 	echo "[INFO] Ant project"
-	./build_ant $PACKAGE
+	../build_ant $PACKAGE
 
 	# 103 -> Wrong parameter : need the name of the package
 	# 700 -> There is not a jar in build/jar/
@@ -105,7 +105,7 @@ elif [ -e build.xml ]; then
 
 elif [ -e build.gradle ]; then
 	echo "[INFO] Gradle project"
-	./build_gradle $PACKAGE
+	../build_gradle $PACKAGE
 
 	# 104 -> Wrong parameter : need the name of the package
 	# 800 -> There is not a jar in build/libs/
@@ -118,7 +118,7 @@ elif [ -e build.gradle ]; then
 
 elif [ `ls | wc -l` -gt 0 ]; then
 	echo "[INFO] There are some files, it will check if there are some executables"
-	./build_bin $PACKAGE
+	../build_bin $PACKAGE
 
 	# 105 -> Wrong parameter : need the name of the package
 	# 500 -> No executable was found
