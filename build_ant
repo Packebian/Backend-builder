@@ -22,7 +22,7 @@ touch $1
 chmod u+x $1
 echo '#!/bin/bash' > $1
 echo "" >> $1
-echo "java -jar ../../../opt/packebian/$1/build/jar/$1.jar" >> $1
+echo "java -jar ./opt/packebian/$1/build/jar/$1.jar" >> $1
 mv $1 usr/local/bin
 
 exit 0

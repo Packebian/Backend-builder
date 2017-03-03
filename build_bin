@@ -9,16 +9,37 @@ if [ $# != 1 ]; then
 fi
 
 for file in *; do
-	if [ -x "$file" ]; then
-		mv $file usr/local/bin
-	else
-		mv $file opt/packebian/$1
+	if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
+		if [ ! -x "$file" -o -d "$file" ]; then
+			mv $file opt/packebian/$1
+		fi
 	fi
 done
+
 if [ `ls opt/packebian/$1 | wc -l` = 0 ]; then
 	rm -rf opt
+	for file in *; do
+		if [ -x "$file" ]; then
+			mv $file usr/local/bin
+		fi
+	done
+else
+	for file in *; do
+		if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
+			if [ -x "$file" ]; then
+				mv $file opt/packebian/$1
+				touch $file
+				chmod u+x $file
+				echo '#!/bin/bash' > $file
+				echo "" >> $file
+				echo "/opt/packebian/$1/$file \$*" >> $file
+				mv $file usr/local/bin
+			fi
+		fi
+	done
 fi
-if [ `ls usr/local/bin | wc -l` = 0]; then
+
+if [ `ls usr/local/bin | wc -l` = 0 ]; then
 	cd ..
 	rm -rf $1
 	echo -e "$red[ERR-500] No executable was found$white"

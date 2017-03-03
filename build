@@ -58,6 +58,16 @@ else
 	rm -rf $PACKAGE
 	exit 300
 fi
+
+echo "[INFO] Check if there are not directories named opt/ and usr/"
+if [ -d opt ]; then
+	echo -e "$red[ERR-900] The project cannot have a directory opt/$white"
+	exit 900
+fi
+if [ -d usr ]; then
+	echo -e "$red[ERR-901] The project cannot have a directory usr/$white"
+	exit 901
+fi
 # *****************************************************************************
 
 
@@ -144,7 +154,7 @@ rm -rf $PACKAGE
 
 echo ""
 echo "**************************************************"
-echo "             Ending package creation              *"
+echo "             Ending package creation             *"
 echo "**************************************************"
 
 exit 0
