@@ -13,7 +13,8 @@ if [ ! -e "build/jar/$1.jar" ]; then
 	echo -e "$red[ERR-700] There is not $1.jar in build/jar/$white"
 	exit 700
 fi
-for $file in *; do
+
+for file in *; do
 	if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
 		mv $file opt/packebian/$1
 	fi
@@ -22,7 +23,7 @@ touch $1
 chmod u+x $1
 echo '#!/bin/bash' > $1
 echo "" >> $1
-echo "java -jar ./opt/packebian/$1/build/jar/$1.jar" >> $1
+echo "java -jar /opt/packebian/$1/build/jar/$1.jar" >> $1
 mv $1 usr/local/bin
 
 exit 0
