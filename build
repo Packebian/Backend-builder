@@ -89,7 +89,7 @@ if [ -e makefile ]; then
 
 elif [ -e pom.xml ]; then
 	echo "[INFO] Maven project"
-	../build_maven $PACKAGE
+	../build_maven $PACKAGE $TAG
 
 	# 102 -> Wrong parameter : need the name of the package
 	# 600 -> There is not a jar in target/
