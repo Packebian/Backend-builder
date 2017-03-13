@@ -1,0 +1,67 @@
+#!/bin/bash
+
+# @author: Thibaut Nouguier
+# @pathway: RICM5
+# @version: 2.0
+
+red="\033[1;31m"
+white="\033[1;37m"
+
+# Check if the project is made of binaries / executables
+if [ `ls | wc -l` = 0 ]; then
+	# There are not executables, then let's move on to another case.
+	exit 50
+fi
+
+echo "[INFO] There are some files, it will check if there are some executables"
+# Check parameters
+if [ $# -lt 1 ]; then
+	echo -e "$red[ERR-205] builder_bin needs only 1 parameter : the name of the package$white"
+	exit 205
+fi
+
+# Move each file / directory into opt/packebian/$1
+for file in *; do
+	if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
+		if [ ! -x "$file" -o -d "$file" ]; then
+			mv $file opt/packebian/$1
+		fi
+	fi
+done
+
+# Remove opt if no source was found
+if [ `ls opt/packebian/$1 | wc -l` = 0 ]; then
+	rm -rf opt
+	for file in *; do
+		if [ -x "$file" ]; then
+			mv $file usr/local/bin
+		fi
+	done
+# Move each executables into opt/packebian/$1, then create a command to call
+# this executables and move it into usr/local/bin
+else
+	for file in *; do
+		if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
+			if [ -x "$file" ]; then
+				mv $file opt/packebian/$1
+				touch $file
+				chmod u+x $file
+				echo '#!/bin/bash' > $file
+				echo "" >> $file
+				echo "/opt/packebian/$1/$file \$*" >> $file
+				mv $file usr/local/bin
+			fi
+		fi
+	done
+fi
+
+# Check if we moved some executables into usr/local/bin, else remove usr/,
+# this is meaning we have to move on to another case
+if [ `ls usr/local/bin | wc -l` = 0 ]; then
+	cd ..
+	rm -rf $1
+	echo -e "$red[ERR-306] No executable was found$white"
+	exit 306
+fi
+
+exit 0

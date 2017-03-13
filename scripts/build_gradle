@@ -1,0 +1,45 @@
+#!/bin/bash
+
+# @author: Thibaut Nouguier
+# @pathway: RICM5
+# @version: 2.0
+
+red="\033[1;31m"
+white="\033[1;37m"
+
+# Check if the project is a GRADLE Project
+if [ ! -e build.gradle ]; then
+	# There is not a build.gradle, then let's move on to another case.
+	exit 50
+fi
+
+echo "[INFO] Gradle project"
+# Check parameters
+if [ $# -lt 1 ]; then
+	echo -e "$red[ERR-204] builder_gradle needs 1 parameter : the name of the package$white"
+	exit 204
+fi
+
+# Build the project to create the jar file
+gradle build
+if [ ! -e "build/libs/$1.jar" ];  then
+	echo -e "$red[ERR-305] There is not $1.jar in build/libs/$white"
+	exit 305
+fi
+
+# Clean the directory
+for file in *; do
+	if [ "$file" != "DEBIAN" -a "$file" != "opt" -a "$file" != "usr" ]; then
+		mv $file opt/packebian/$1
+	fi
+done
+
+# Create a command to execute the jar and move it into usr/local/bin
+touch $1
+chmod u+x $1
+echo '#!/bin/bash' > $1
+echo "" >> $1
+echo "java -jar /opt/packebian/$1/build/libs/$1.jar" >> $1
+mv $1 usr/local/bin
+
+exit 0
