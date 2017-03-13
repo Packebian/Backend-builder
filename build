@@ -7,6 +7,8 @@ REPOSITORY=
 PACKAGE=
 TAG=
 
+SCRIPTS=`ls scripts/ | wc -l`
+
 # Remove the first dash of options
 while getopts ":-:" dash; do
 	# IPS : shell separator
@@ -26,7 +28,7 @@ if [ -z "$REPOSITORY" -o -z "$PACKAGE" -o -z "$TAG" ]; then
 	echo " --repository : adress of the git"
 	echo " --package : name of the package"
 	echo " --tag : tag to know where the builder has to copy"
-	exit 100
+	exit 200
 fi
 
 
@@ -50,23 +52,23 @@ if [ -d DEBIAN ]; then
 		echo -e "$red[ERR-200] There is not a file 'control' in DEBIAN/$white"
 		cd ../..
 		rm -rf $PACKAGE
-		exit 200
+		exit 301
 	fi
 else
 	echo -e "$red[ERR-300] There is not a directory 'DEBIAN/'$white"
 	cd ..
 	rm -rf $PACKAGE
-	exit 300
+	exit 302
 fi
 
 echo "[INFO] Check if there are not directories named opt/ and usr/"
 if [ -d opt ]; then
 	echo -e "$red[ERR-900] The project cannot have a directory opt/$white"
-	exit 900
+	exit 401
 fi
 if [ -d usr ]; then
 	echo -e "$red[ERR-901] The project cannot have a directory usr/$white"
-	exit 901
+	exit 402
 fi
 # *****************************************************************************
 
@@ -75,76 +77,22 @@ fi
 mkdir -p usr/local/bin
 mkdir -p opt/packebian/$PACKAGE
 
-if [ -e makefile ]; then
-	echo "[INFO] There is a makefile"
-	../build_makefile $PACKAGE
-
-	# 101 -> Wrong parameter : need the name of the package
-	if [ $? = 101 ]; then
-		err=$?
+cpt=0
+for file in ../scripts/*; do
+	$file $PACKAGE $TAG
+	err=$?
+	cpt=$cpt+1
+	if [ $err = 0 ]; then
+		break
+	elif [ $err != 50 ]; then
+		exit $err
+	elif [ $cpt = $SCRIPTS ]; then
+		echo -e "$red[ERR-100] Git repository was not build as recommended or the builder is not configured$white"
 		cd ..
-        	rm -rf $PACKAGE
-		exit err
+		rm -rf $PACKAGE
+		exit 100
 	fi
-
-elif [ -e pom.xml ]; then
-	echo "[INFO] Maven project"
-	../build_maven $PACKAGE $TAG
-
-	# 102 -> Wrong parameter : need the name of the package
-	# 600 -> There is not a jar in target/
-	if [ $? = 102 -o $? = 600 ]; then
-		err=$?
-		cd ..
-        	rm -rf $PACKAGE
-		exit err
-	fi
-
-elif [ -e build.xml ]; then
-	echo "[INFO] Ant project"
-	../build_ant $PACKAGE
-
-	# 103 -> Wrong parameter : need the name of the package
-	# 700 -> There is not a jar in build/jar/
-	if [ $? = 103 -o $? = 700 ]; then
-		err=$?
-		cd ..
-        	rm -rf $PACKAGE
-		exit err
-	fi
-
-elif [ -e build.gradle ]; then
-	echo "[INFO] Gradle project"
-	../build_gradle $PACKAGE
-
-	# 104 -> Wrong parameter : need the name of the package
-	# 800 -> There is not a jar in build/libs/
-	if [ $? = 104 -o $? = 800 ]; then
-		err=$?
-		cd ..
-        	rm -rf $PACKAGE
-		exit err
-	fi
-
-elif [ `ls | wc -l` -gt 0 ]; then
-	echo "[INFO] There are some files, it will check if there are some executables"
-	../build_bin $PACKAGE
-
-	# 105 -> Wrong parameter : need the name of the package
-	# 500 -> No executable was found
-	if [ $? = 105 -o $? = 500 ]; then
-		err=$?
-		cd ..
-        	rm -rf $PACKAGE
-		exit err
-	fi
-
-else
-	echo -e "$red[ERR-400] Git repository was not build as recommended or the builder is not configured$white"
-	cd ..
-	rm -rf $PACKAGE
-	exit 400
-fi
+done
 
 cd ..
 echo "[INFO] Creation of the package"
