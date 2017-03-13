@@ -1,12 +1,19 @@
 #!/bin/bash
 
+# @author: Thibaut Nouguier
+# @pathway: RICM5
+# @version: 2.0
+
+# Just colors
 red="\033[1;31m"
 white="\033[1;37m"
 
+# Parameters for the builder
 REPOSITORY=
 PACKAGE=
 TAG=
 
+# Get the total number of scripts
 SCRIPTS=`ls scripts/ | wc -l`
 
 # Remove the first dash of options
@@ -23,6 +30,7 @@ while getopts ":-:" dash; do
 	done < <( echo "$OPTARG" )
 done
 
+# Check parameters
 if [ -z "$REPOSITORY" -o -z "$PACKAGE" -o -z "$TAG" ]; then
 	echo "Builder needs 3 parameters :"
 	echo " --repository : adress of the git"
@@ -37,12 +45,14 @@ echo "           Starting package creation             *"
 echo "**************************************************"
 echo ""
 
+# Clone the git and clean it
 echo "[INFO] Cloning git : $REPOSITORY"
 git clone $REPOSITORY
 cd $PACKAGE
 rm -rf .git
 
 # *****************************************************************************
+# Check if DEBIAN/ and DEBIAN/control exist
 echo "[INFO] Check if DEBIAN/ and DEBIAN/control exist"
 if [ -d DEBIAN ]; then
 	cd DEBIAN
@@ -61,6 +71,7 @@ else
 	exit 302
 fi
 
+# Git cloned cannot have directories like opt/ and usr/
 echo "[INFO] Check if there are not directories named opt/ and usr/"
 if [ -d opt ]; then
 	echo -e "$red[ERR-900] The project cannot have a directory opt/$white"
@@ -73,32 +84,38 @@ fi
 # *****************************************************************************
 
 
+# *****************************************************************************
 # Creating our directories for sources and executables
 mkdir -p usr/local/bin
 mkdir -p opt/packebian/$PACKAGE
 
+# Execute each scripts until find the right case or just let it go
 cpt=0
 for file in ../scripts/*; do
 	$file $PACKAGE $TAG
 	err=$?
-	cpt=$cpt+1
+	((cpt++))
+	# Script found and done
 	if [ $err = 0 ]; then
 		break
+	# It is not the right script for this case
 	elif [ $err != 50 ]; then
 		exit $err
+	# No script was found to solve this case
 	elif [ $cpt = $SCRIPTS ]; then
-		echo -e "$red[ERR-100] Git repository was not build as recommended or the builder is not configured$white"
+		echo -e "$red[ERR-100] Git repository was not build as recommended or the builder is not configured for the current case$white"
 		cd ..
 		rm -rf $PACKAGE
 		exit 100
 	fi
 done
 
+# Create the package
 cd ..
-echo "[INFO] Creation of the package"
+echo "[INFO] Creation of the package : $PACKAGE"
 dpkg-deb --build $PACKAGE
-
 rm -rf $PACKAGE
+# *****************************************************************************
 
 echo ""
 echo "**************************************************"
