@@ -45,7 +45,7 @@ else
 			if [ -x "$file" ]; then
 				mv $file opt/packebian/$1
 				touch $file
-				chmod u+x $file
+				chmod ugo+x $file
 				echo '#!/bin/bash' > $file
 				echo "" >> $file
 				echo "/opt/packebian/$1/$file \$*" >> $file
