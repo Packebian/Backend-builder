@@ -115,6 +115,7 @@ cd ..
 echo "[INFO] Creation of the package : $PACKAGE"
 dpkg-deb --build $PACKAGE
 rm -rf $PACKAGE
+mv $PACKAGE built
 # *****************************************************************************
 
 echo ""
