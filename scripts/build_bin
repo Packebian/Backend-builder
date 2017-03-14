@@ -8,7 +8,7 @@ red="\033[1;31m"
 white="\033[1;37m"
 
 # Check if the project is made of binaries / executables
-if [ `ls | wc -l` = 0 ]; then
+if [ -e build.xml -o -e build.gradle -o -e makefile -o -e pom.xml ]; then
 	# There are not executables, then let's move on to another case.
 	exit 50
 fi
