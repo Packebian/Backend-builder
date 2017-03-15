@@ -21,7 +21,8 @@ if [ $# -lt 1 ]; then
 fi
 
 # Run the project to create the jar file
-ant run
+# Dependencies : clean -> compile -> jar (supposed true)
+ant jar
 if [ ! -e "build/jar/$1.jar" ]; then
 	echo -e "$red[ERR-304] There is not $1.jar in build/jar/$white"
 	exit 304
