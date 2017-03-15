@@ -1,6 +1,7 @@
 ----------
 # **Packebian Backend Builder**
 
+[![Build Status](https://travis-ci.org/Packebian/Backend-builder.svg?branch=master)](https://travis-ci.org/Packebian/Backend-builder)
 
 ## **Introduction :**
 Au cours de mon cursus RICM (Réseaux Informatique Communication Multimédia) au sein de l'école de Polytech Grenoble, de nombreux outils ont été nécessaires pour la réalisation des Travaux-Pratiques et des Projets. Cependant, certains outils ne sont pas utilisables facilement, il a fallu environ une heure et parfois bien plus pour réussir à les installer et les utiliser.
@@ -37,7 +38,7 @@ Il clone le dépôt git grâce à l'url passée en paramètre, il vérifie que l
 
 ### **Gestion des types de projet :**
 La liste explicatives des types de projet gérés par le builder ci-dessous n'est pas exhaustive.
-Chaque projet doit contenir sur son dépôt git un dossier DEBIAN contenant le fichier control décrivant le package que l'on souhaite créer. 
+Chaque projet doit contenir sur son dépôt git un dossier DEBIAN contenant le fichier control décrivant le package que l'on souhaite créer.
 #### __*Projet basé sur un makefile*__
 Pour qu'un projet soit détecté comme un projet basé sur un makefile il est demandé que le makefile soit à la racine du projet.
 L'arborescence de fichier sur un dépôt git doit correspondre à la suivante :
@@ -88,7 +89,7 @@ Les exécutables produits sont ensuite déplacés dans usr/local/bin, pour que l
 			| - local
 				| - bin
 					| * {exécutables}
-					
+
 #### __*Projet basé sur des exécutables*__
 Pour qu'un projet soit détecté comme un projet basé des exécutables il est demandé que les exécutables soient à la racine du projet.
 L'arborescence de fichier sur un dépôt git doit correspondre à la suivante :
